@@ -17,9 +17,17 @@
 #include <linux/cpufreq.h>
 #include <linux/fb.h>
 #include <linux/input.h>
+#include <linux/moduleparam.h>
 #include <linux/slab.h>
-
 #include "../../kernel/sched/sched.h"
+
+unsigned int input_boost_freq_lp = CONFIG_INPUT_BOOST_FREQ_LP;
+unsigned int input_boost_freq_hp = CONFIG_INPUT_BOOST_FREQ_PERF;
+unsigned short input_boost_duration = CONFIG_INPUT_BOOST_DURATION_MS;
+
+module_param(input_boost_freq_lp, uint, 0644);
+module_param(input_boost_freq_hp, uint, 0644);
+module_param(input_boost_duration, short, 0644);
 
 /* Available bits for boost_drv state */
 #define SCREEN_AWAKE		(1U << 0)
@@ -42,11 +50,11 @@ static u32 get_boost_freq(struct boost_drv *b, u32 cpu)
 	unsigned int i;
 
 	if (cpumask_test_cpu(cpu, cpu_lp_mask))
-		return CONFIG_INPUT_BOOST_FREQ_LP;
+		return input_boost_freq_lp;
 
 	for_each_possible_cpu(i) {
 		if (i >= 2 && cpu_rq(i)->nr_running == 0)
-			return CONFIG_INPUT_BOOST_FREQ_PERF;
+			return input_boost_freq_hp;
 	};
 	return 0;
 }
@@ -124,7 +132,7 @@ static void input_boost_worker(struct work_struct *work)
 	}
 
 	queue_delayed_work(b->wq, &b->input_unboost,
-		msecs_to_jiffies(CONFIG_INPUT_BOOST_DURATION_MS));
+		msecs_to_jiffies(input_boost_duration));
 }
 
 static void input_unboost_worker(struct work_struct *work)
