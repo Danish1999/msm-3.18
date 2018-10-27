@@ -30,7 +30,7 @@
 
 #include <linux/module.h>
 #include <linux/devfreq.h>
-#include <linux/display_state.h>
+#include <linux/state_notifier.h>
 #include <linux/msm_adreno_devfreq.h>
 
 #define ADRENO_IDLER_MAJOR_VERSION 1
@@ -71,7 +71,7 @@ int adreno_idler(struct devfreq_dev_status stats, struct devfreq *devfreq,
 	if (!adreno_idler_active)
 		return 0;
 
-	display_on = is_display_on();
+	display_on = !state_suspended;
 
 	if (stats.busy_time < idleworkload) {
 		/* busy_time >= idleworkload should be considered as a non-idle workload. */
