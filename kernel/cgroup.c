@@ -59,6 +59,8 @@
 #include <linux/delay.h>
 
 #include <linux/atomic.h>
+#include <linux/cpu_input_boost.h>
+#include <linux/devfreq_boost.h>
 
 /*
  * pidlists linger the following amount before being destroyed.  The goal
@@ -2426,6 +2428,14 @@ retry_find_task:
 	}
 
 	ret = cgroup_attach_task(cgrp, tsk, threadgroup);
+
+	/* Boost CPU to the max for 750 ms when Quickstep becomes a top app */
+	if (!memcmp(tsk->comm, "droid.launcher3", sizeof("droid.launcher3")) &&
+		!memcmp(cgrp->kn->name, "top-app", sizeof("top-app")) && !ret) {
+		cpu_input_boost_kick_max(750);
+		devfreq_boost_kick_max(DEVFREQ_MSM_CPUBW, 750);
+	}
+
 
 	threadgroup_unlock(tsk);
 
